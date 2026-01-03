@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Solo Leveling FE</title>
+    <title>Solo Leveling - Habit Tracker</title>
     <meta
       name="description"
-      content="Solo Leveling FE - A modern habit tracking application"
+      content="Solo Leveling - A modern habit tracking application"
     />
     <meta
       name="keywords"
@@ -14,7 +14,7 @@
     />
     <meta name="author" content="Solo Leveling FE" />
 
-    <meta property="og:title" content="Solo Leveling FE" />
+    <meta property="og:title" content="Solo Leveling - Habit Tracker" />
     <meta
       property="og:description"
       content="A modern habit tracking application"
@@ -22,7 +22,19 @@
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <script type="module" crossorigin src="/Solo-Leveling-FE/assets/index-9_QphWZ7.js"></script>
+    
+    <!-- GitHub Pages SPA redirect handler -->
+    <script>
+      // Check if we have a redirect path stored
+      (function() {
+        var redirect = sessionStorage.getItem('redirect');
+        if (redirect) {
+          sessionStorage.removeItem('redirect');
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/Solo-Leveling-FE/assets/index-DXjgJnLV.js"></script>
     <link rel="stylesheet" crossorigin href="/Solo-Leveling-FE/assets/index-DcS9o3-x.css">
   </head>
 
