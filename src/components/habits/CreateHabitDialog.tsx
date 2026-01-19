@@ -175,10 +175,10 @@ export const CreateHabitDialog = ({
             </TabsList>
 
             {/* Templates Tab */}
-            <TabsContent value="templates" className="mt-3 sm:mt-4 space-y-3 sm:space-y-4 overflow-y-auto flex-1 pr-1">
+            <TabsContent value="templates" className="mt-3 sm:mt-4 space-y-3 sm:space-y-4 overflow-y-auto flex-1 pr-3 sm:pr-4">
               {HABIT_TEMPLATES.map((templateGroup) => (
                 <div key={templateGroup.category}>
-                  <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
+                  <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2 px-0.5">
                     {templateGroup.category}
                   </h4>
                   <div className="space-y-1.5 sm:space-y-2">
@@ -189,7 +189,7 @@ export const CreateHabitDialog = ({
                           key={template.name}
                           type="button"
                           onClick={() => handleUseTemplate(template)}
-                          className="w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border border-border bg-card hover:bg-accent/10 hover:border-accent/30 transition-all text-left group"
+                          className="w-full flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg border border-border bg-card hover:bg-accent/10 hover:border-accent/30 transition-all text-left group"
                         >
                           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-accent/20 transition-colors">
                             <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary group-hover:text-accent" />
@@ -208,7 +208,7 @@ export const CreateHabitDialog = ({
             </TabsContent>
 
             {/* Custom Tab */}
-            <TabsContent value="create" className="mt-3 sm:mt-4 overflow-y-auto flex-1 pr-1">
+            <TabsContent value="create" className="mt-3 sm:mt-4 overflow-y-auto flex-1 pr-3 sm:pr-4">
               <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-5">
                 {/* Icon Selection */}
                 <div className="space-y-1.5 sm:space-y-2">
@@ -306,7 +306,7 @@ export const CreateHabitDialog = ({
 
         {/* Edit mode - no tabs */}
         {editHabit && (
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-5 pt-3 sm:pt-4 overflow-y-auto flex-1 pr-1">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-5 pt-3 sm:pt-4 overflow-y-auto flex-1 pr-3 sm:pr-4">
             {/* Icon Selection */}
             <div className="space-y-1.5 sm:space-y-2">
               <Label className="text-xs sm:text-sm font-medium">Icon</Label>
