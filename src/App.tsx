@@ -32,7 +32,6 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter
-          basename="/Solo-Leveling-FE"
           future={{
             v7_startTransition: true,
             v7_relativeSplatPath: true,
