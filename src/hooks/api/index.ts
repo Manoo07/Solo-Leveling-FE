@@ -8,3 +8,5 @@ export * from "./useSettings";
 export * from "./useIntegrations";
 export * from "./useDashboard";
 export * from "./useWeeklyProgress";
+export * from "./useToggleHabit";
+export * from "./useBulkToggleHabits";
