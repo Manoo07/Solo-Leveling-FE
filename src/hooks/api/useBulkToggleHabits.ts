@@ -3,26 +3,39 @@ import { useState, useCallback } from "react";
 import { dashboardApi } from "@/lib/api/dashboard.api";
 import { dashboardKeys } from "./useDashboard";
 import { weeklyProgressKeys } from "./useWeeklyProgress";
-import type { BulkToggleUpdate } from "@/lib/api/types";
+import type { BulkToggleUpdate, BulkToggleResponse } from "@/lib/api/types";
 
-export const useBulkToggleHabits = () => {
+type MilestoneCallback = (milestones: BulkToggleResponse) => void;
+
+export const useBulkToggleHabits = (onMilestoneAchieved?: MilestoneCallback) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (updates: BulkToggleUpdate[]) => 
       dashboardApi.bulkToggleHabits({ updates }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate all dashboard queries and weekly progress after bulk update
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
       queryClient.invalidateQueries({ queryKey: weeklyProgressKeys.all });
+      
+      // Check for milestones and trigger callback
+      if (onMilestoneAchieved && data.streaks?.length > 0) {
+        const hasMilestones = data.streaks.some(streak => streak.milestones?.milestone);
+        if (hasMilestones) {
+          onMilestoneAchieved(data);
+        }
+      }
     },
   });
 };
 
 // Hook to accumulate changes - only saves when flush() is called
-export const useDebouncedBulkToggle = (onSuccess?: () => void) => {
+export const useDebouncedBulkToggle = (
+  onSuccess?: () => void,
+  onMilestoneAchieved?: MilestoneCallback
+) => {
   const [pendingUpdates, setPendingUpdates] = useState<Map<string, BulkToggleUpdate>>(new Map());
-  const bulkToggle = useBulkToggleHabits();
+  const bulkToggle = useBulkToggleHabits(onMilestoneAchieved);
 
   const queueUpdate = useCallback((update: BulkToggleUpdate) => {
     setPendingUpdates(prev => {

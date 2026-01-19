@@ -11,6 +11,7 @@ export interface Milestone {
   days: number;
   type: 'streak' | 'total';
   earnedAt: string;
+  message?: string; // Optional custom message from API
 }
 
 interface MilestoneBadgeProps {
@@ -109,9 +110,15 @@ export const MilestoneBadge = ({ milestone, onDismiss }: MilestoneBadgeProps) =>
           <h3 className="text-2xl font-bold text-foreground mb-2">
             {milestone.days} Day{milestone.days > 1 ? 's' : ''}!
           </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {milestone.type === 'streak' ? 'Streak' : 'Total completions'} for
-          </p>
+          {milestone.message ? (
+            <p className="text-sm text-muted-foreground mb-2">
+              {milestone.message}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground mb-4">
+              {milestone.type === 'streak' ? 'Streak' : 'Total completions'} for
+            </p>
+          )}
           <p className="text-lg font-semibold text-foreground">
             {milestone.habitName}
           </p>
@@ -142,7 +149,7 @@ interface MilestoneTrackerProps {
 
 const MILESTONE_THRESHOLDS = [7, 14, 21, 30, 50, 100, 365];
 
-export const useMilestoneTracker = (habits: MilestoneTrackerProps['habits']) => {
+export const useMilestoneTracker = (habits?: MilestoneTrackerProps['habits']) => {
   const [pendingMilestone, setPendingMilestone] = useState<Milestone | null>(null);
   const [shownMilestones, setShownMilestones] = useState<Set<string>>(() => {
     try {
@@ -154,7 +161,9 @@ export const useMilestoneTracker = (habits: MilestoneTrackerProps['habits']) => 
   });
 
   useEffect(() => {
-    // Check for new milestones
+    // Check for new milestones only if habits are provided
+    if (!habits) return;
+    
     for (const habit of habits) {
       for (const threshold of MILESTONE_THRESHOLDS) {
         const streakKey = `${habit.id}-streak-${threshold}`;
@@ -183,5 +192,16 @@ export const useMilestoneTracker = (habits: MilestoneTrackerProps['habits']) => 
     }
   };
 
-  return { pendingMilestone, dismissMilestone };
+  const addMilestone = (milestone: Milestone) => {
+    // Check if this milestone has already been shown
+    if (!shownMilestones.has(milestone.id)) {
+      setPendingMilestone(milestone);
+      const newShown = new Set(shownMilestones);
+      newShown.add(milestone.id);
+      setShownMilestones(newShown);
+      localStorage.setItem('solo-leveling_milestones', JSON.stringify([...newShown]));
+    }
+  };
+
+  return { pendingMilestone, dismissMilestone, addMilestone };
 };

@@ -2,7 +2,11 @@ import { apiClient } from "./client";
 import type {
   DashboardData,
   ToggleHabitRequest,
+  ToggleHabitResponse,
+  SaveNoteRequest,
+  SaveNoteResponse,
   BulkToggleRequest,
+  BulkToggleResponse,
   Entry,
   CalendarData,
   CalendarParams,
@@ -22,16 +26,25 @@ export const dashboardApi = {
 
   /**
    * Toggle or set habit completion status for a specific date
+   * Returns entry data along with streak information and milestone messages
    */
-  toggleHabit: async (data: ToggleHabitRequest): Promise<{ entry: Entry }> => {
-    return apiClient.post<{ entry: Entry }>("/v1/stats/toggle-habit", data);
+  toggleHabit: async (data: ToggleHabitRequest): Promise<ToggleHabitResponse> => {
+    return apiClient.post<ToggleHabitResponse>("/v1/stats/toggle-habit", data);
+  },
+
+  /**
+   * Save or edit notes for a habit entry without toggling completion
+   * Returns entry data along with streak information
+   */
+  saveNote: async (data: SaveNoteRequest): Promise<SaveNoteResponse> => {
+    return apiClient.post<SaveNoteResponse>("/v1/stats/save-note", data);
   },
 
   /**
    * Bulk toggle multiple habits at once
    */
-  bulkToggleHabits: async (data: BulkToggleRequest): Promise<{ entries: Entry[] }> => {
-    return apiClient.post<{ entries: Entry[] }>("/v1/stats/bulk-toggle-habits", data);
+  bulkToggleHabits: async (data: BulkToggleRequest): Promise<BulkToggleResponse> => {
+    return apiClient.post<BulkToggleResponse>("/v1/stats/bulk-toggle-habits", data);
   },
 
   /**

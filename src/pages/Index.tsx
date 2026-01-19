@@ -2,12 +2,14 @@ import { useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { format, subDays, addDays, startOfDay, startOfWeek, isToday as isTodayFn } from 'date-fns';
 import { useDashboard } from '@/hooks/api';
-import { useCreateHabit } from '@/hooks/api/useHabits';
+import { useCreateHabit, useDeleteHabit } from '@/hooks/api/useHabits';
 import { useCategories } from '@/hooks/api/useCategories';
+import { dashboardApi } from '@/lib/api/dashboard.api';
 import { useDebouncedBulkToggle } from '@/hooks/api/useBulkToggleHabits';
 import { HabitTableGrid } from '@/components/habits/HabitTableGrid';
 import { HeatMapView } from '@/components/habits/HeatMapView';
 import { CreateHabitDialog } from '@/components/habits/CreateHabitDialog';
+import { HabitNoteDialog } from '@/components/habits/HabitNoteDialog';
 import { ManageCategoriesDialog } from '@/components/habits/ManageCategoriesDialog';
 import { MilestoneBadge, useMilestoneTracker } from '@/components/milestones/MilestoneBadge';
 import { QuickStats } from '@/components/dashboard/QuickStats';
@@ -38,6 +40,15 @@ const Index = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   // Track toggle state by habitId+date combination (e.g., "habitId_2026-01-03")
   const [localToggleState, setLocalToggleState] = useState<Map<string, boolean>>(new Map());
+  // Note dialog state
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [noteDialogData, setNoteDialogData] = useState<{
+    habitId: string;
+    habitName: string;
+    date: string;
+    existingNote?: string;
+    isCompleted: boolean;
+  } | null>(null);
 
   // Calculate start date based on selected date (week containing that date)
   const startDate = useMemo(() => {
@@ -63,11 +74,42 @@ const Index = () => {
   const { data: dashboardData, isLoading, error } = useDashboard(
     isCurrentWeek ? undefined : apiStartDate // Only pass startDate if not current week
   );
-  const { queueUpdate, flush, pendingCount, isLoading: isSaving } = useDebouncedBulkToggle(() => {
-    // Clear local state after successful save
-    setLocalToggleState(new Map());
-  });
+  
+  // Milestone tracking
+  const { pendingMilestone, dismissMilestone, addMilestone } = useMilestoneTracker();
+  
+  const { queueUpdate, flush, pendingCount, isLoading: isSaving } = useDebouncedBulkToggle(
+    () => {
+      // Clear local state after successful save
+      setLocalToggleState(new Map());
+    },
+    (response) => {
+      // Handle milestone achievements from API response
+      if (response.streaks && response.streaks.length > 0) {
+        response.streaks.forEach(streak => {
+          if (streak.milestones?.milestone && streak.milestones?.streakMessage) {
+            // Find habit name from dashboard data
+            const habit = dashboardData?.weekHabits?.find(h => h.habitId === streak.habitId) 
+              || dashboardData?.todayHabits?.find(h => h.habitId === streak.habitId);
+            
+            if (habit) {
+              addMilestone({
+                id: `${streak.habitId}_${Date.now()}`,
+                habitId: streak.habitId,
+                habitName: habit.habitName,
+                days: streak.currentStreak,
+                type: 'streak',
+                earnedAt: new Date().toISOString(),
+                message: streak.milestones.streakMessage,
+              });
+            }
+          }
+        });
+      }
+    }
+  );
   const createHabitMutation = useCreateHabit();
+  const deleteHabitMutation = useDeleteHabit();
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   
   // Map categories to the format expected by CreateHabitDialog
@@ -133,8 +175,6 @@ const Index = () => {
       completions: {},
     })), 
   [habitsWithLocalState]);
-
-  const { pendingMilestone, dismissMilestone } = useMilestoneTracker(habits);
 
   // Calculate dashboard stats with pending changes
   const adjustedDashboardData = useMemo(() => {
@@ -214,9 +254,91 @@ const Index = () => {
 
   const confirmDelete = () => {
     if (deletingHabitId) {
-      // TODO: Implement delete habit API call
-      console.log('Delete habit:', deletingHabitId);
-      setDeletingHabitId(null);
+      deleteHabitMutation.mutate(deletingHabitId, {
+        onSuccess: () => {
+          setDeletingHabitId(null);
+          // Clear any local toggle state for this habit
+          setLocalToggleState(prev => {
+            const newMap = new Map(prev);
+            // Remove all entries for this habit
+            Array.from(newMap.keys())
+              .filter(key => key.startsWith(`${deletingHabitId}_`))
+              .forEach(key => newMap.delete(key));
+            return newMap;
+          });
+        },
+        onError: () => {
+          // Error toast is already handled in the hook
+          setDeletingHabitId(null);
+        },
+      });
+    }
+  };
+
+  const handleOpenNoteDialog = (habitId: string, habitName: string, date: string) => {
+    const habit = habitsWithLocalState.find(h => h.id === habitId);
+    const isWeekHabit = habit && 'dailyEntries' in habit;
+    const existingNote = isWeekHabit ? habit.dailyEntries[date]?.notes : undefined;
+    const stateKey = `${habitId}_${date}`;
+    const isCompleted = localToggleState.get(stateKey) ?? habit?.completed ?? false;
+    
+    setNoteDialogData({
+      habitId,
+      habitName,
+      date,
+      existingNote: existingNote || undefined,
+      isCompleted,
+    });
+    setNoteDialogOpen(true);
+  };
+
+  const handleSaveNote = async (habitId: string, date: string, note: string) => {
+    try {
+      const habit = habits?.find(h => h.id === habitId);
+      if (!habit) return;
+
+      // Get current completion status
+      const stateKey = `${habitId}_${date}`;
+      const isCompleted = localToggleState.get(stateKey) ?? habit?.completed ?? false;
+
+      // Use new save-note API
+      const response = await dashboardApi.saveNote({
+        habitId,
+        date,
+        notes: note,
+        completed: isCompleted,
+      });
+
+      // Check for milestone celebration
+      if (response.streak?.milestones?.milestone) {
+        const habitName = habit.name;
+        addMilestone({
+          habitName,
+          message: response.streak.milestones.streakMessage,
+          currentStreak: response.streak.currentStreak,
+        });
+      }
+
+      // Refetch dashboard data to update UI
+      refetch();
+    } catch (error) {
+      console.error('Failed to save note:', error);
+    }
+  };
+
+  const handleDeleteNote = async (habitId: string, date: string) => {
+    try {
+      // Delete note by setting it to empty
+      await dashboardApi.saveNote({
+        habitId,
+        date,
+        notes: '',
+      });
+
+      // Refetch dashboard data
+      refetch();
+    } catch (error) {
+      console.error('Failed to delete note:', error);
     }
   };
 
@@ -414,6 +536,7 @@ const Index = () => {
               startDate={startDate}
               onToggle={handleToggle}
               onDelete={setDeletingHabitId}
+              onNoteClick={handleOpenNoteDialog}
               localToggleState={localToggleState}
             />
           ) : (
@@ -432,13 +555,39 @@ const Index = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogCancel disabled={deleteHabitMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteHabitMutation.isPending}
+            >
+              {deleteHabitMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Note Dialog */}
+      {noteDialogData && (
+        <HabitNoteDialog
+          habitId={noteDialogData.habitId}
+          habitName={noteDialogData.habitName}
+          date={noteDialogData.date}
+          existingNote={noteDialogData.existingNote}
+          isCompleted={noteDialogData.isCompleted}
+          onSaveNote={handleSaveNote}
+          onDeleteNote={handleDeleteNote}
+          open={noteDialogOpen}
+          onOpenChange={setNoteDialogOpen}
+        />
+      )}
     </div>
   );
 };

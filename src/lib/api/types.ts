@@ -119,16 +119,64 @@ export interface ToggleHabitRequest {
   habitId: string;
   date?: string; // Optional, defaults to today
   completed?: boolean; // Optional, toggles if not provided
+  notes?: string; // Optional notes for the entry
+}
+
+export interface ToggleHabitResponse {
+  entry: Entry;
+  streak: StreakUpdate;
+  streakMessage: string;
+}
+
+export interface SaveNoteRequest {
+  habitId: string;
+  date: string;
+  notes: string;
+  completed?: boolean; // Optional
+}
+
+export interface SaveNoteResponse {
+  entry: Entry;
+  streak: StreakUpdate;
 }
 
 export interface BulkToggleUpdate {
   habitId: string;
   completed: boolean;
   date?: string; // Optional, defaults to today
+  notes?: string; // Optional notes for the entry
 }
 
 export interface BulkToggleRequest {
   updates: BulkToggleUpdate[];
+}
+
+export interface MilestoneInfo {
+  milestone: boolean;
+  streakMessage: string;
+}
+
+export interface StreakUpdate {
+  habitId: string;
+  previousCurrentStreak: number;
+  currentStreak: number;
+  previousLongestStreak: number;
+  longestStreak: number;
+  lastCompletedDate: string | null;
+  milestones: MilestoneInfo;
+}
+
+export interface BulkToggleResult {
+  habitId: string;
+  success: boolean;
+  entry: Entry;
+}
+
+export interface BulkToggleResponse {
+  updated: number;
+  results: BulkToggleResult[];
+  streaks: StreakUpdate[];
+  streakMessages: string[];
 }
 
 export type Mood = "HAPPY" | "NEUTRAL" | "SAD" | "ANXIOUS" | "ENERGETIC" | "TIRED";
@@ -384,6 +432,7 @@ export interface TotalCompletions {
 export interface DailyEntry {
   completed: boolean;
   value: number | null;
+  notes?: string | null;
 }
 
 export interface WeekStats {
