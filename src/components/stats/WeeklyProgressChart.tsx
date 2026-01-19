@@ -142,8 +142,30 @@ export const WeeklyProgressChart = ({ startDate, endDate }: WeeklyProgressChartP
               dataKey="Total"
               stroke="#94a3b8"
               strokeWidth={1.5}
-              dot={{ fill: '#94a3b8', r: 3 }}
-              activeDot={{ r: 5 }}
+              dot={(props) => {
+                const { cx, cy, index } = props;
+                return (
+                  <circle
+                    key={`dot-total-${index}`}
+                    cx={cx}
+                    cy={cy}
+                    r={3}
+                    fill="#94a3b8"
+                  />
+                );
+              }}
+              activeDot={(props) => {
+                const { cx, cy, index } = props;
+                return (
+                  <circle
+                    key={`active-dot-total-${index}`}
+                    cx={cx}
+                    cy={cy}
+                    r={5}
+                    fill="#94a3b8"
+                  />
+                );
+              }}
               name="Total Possible"
             />
             <Line
@@ -152,9 +174,10 @@ export const WeeklyProgressChart = ({ startDate, endDate }: WeeklyProgressChartP
               stroke="#10b981"
               strokeWidth={1.5}
               dot={(props) => {
-                const { cx, cy, payload } = props;
+                const { cx, cy, payload, index } = props;
                 return (
                   <circle
+                    key={`dot-completed-${index}`}
                     cx={cx}
                     cy={cy}
                     r={payload.isToday ? 5 : 3}
@@ -164,7 +187,20 @@ export const WeeklyProgressChart = ({ startDate, endDate }: WeeklyProgressChartP
                   />
                 );
               }}
-              activeDot={{ r: 5 }}
+              activeDot={(props) => {
+                const { cx, cy, r, fill, stroke, strokeWidth, index } = props;
+                return (
+                  <circle
+                    key={`active-dot-${index}`}
+                    cx={cx}
+                    cy={cy}
+                    r={5}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth={strokeWidth}
+                  />
+                );
+              }}
               name="Completed"
             />
             <defs>

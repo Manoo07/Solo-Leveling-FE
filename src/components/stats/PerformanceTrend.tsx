@@ -95,8 +95,31 @@ export const PerformanceTrend = ({ habits, startDate, daysCount = 21 }: Performa
               dataKey="rate"
               stroke="hsl(var(--accent))"
               strokeWidth={2}
-              dot={{ fill: 'hsl(var(--accent))', strokeWidth: 0, r: 2 }}
-              activeDot={{ r: 4, fill: 'hsl(var(--accent))' }}
+              dot={(props) => {
+                const { cx, cy, index } = props;
+                return (
+                  <circle
+                    key={`dot-rate-${index}`}
+                    cx={cx}
+                    cy={cy}
+                    r={2}
+                    fill="hsl(var(--accent))"
+                    strokeWidth={0}
+                  />
+                );
+              }}
+              activeDot={(props) => {
+                const { cx, cy, index } = props;
+                return (
+                  <circle
+                    key={`active-dot-rate-${index}`}
+                    cx={cx}
+                    cy={cy}
+                    r={4}
+                    fill="hsl(var(--accent))"
+                  />
+                );
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>
