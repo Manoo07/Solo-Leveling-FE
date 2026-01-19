@@ -32,6 +32,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter
+          basename={import.meta.env.PROD ? '/Solo-Leveling-FE' : '/'}
           future={{
             v7_startTransition: true,
             v7_relativeSplatPath: true,
