@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { format, addDays, startOfDay, isToday as isTodayFn } from "date-fns";
-import { Trash2, Target, Plus } from "lucide-react";
+import { Trash2, Target, Plus, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TodayHabit, WeekHabit } from "@/lib/api/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,10 +9,11 @@ import { FireIcon } from "@/components/ui/fire-icon";
 import { HabitIcon } from "@/components/ui/habit-icon";
 
 interface HabitTableGridProps {
-  habits: (TodayHabit & { dailyEntries?: Record<string, { completed: boolean; value: number | null }> })[];
+  habits: (TodayHabit & { dailyEntries?: Record<string, { completed: boolean; value: number | null; notes?: string | null }> })[];
   startDate: Date;
   onToggle: (habitId: string, date: string) => void;
   onDelete: (habitId: string) => void;
+  onNoteClick?: (habitId: string, habitName: string, date: string) => void;
   localToggleState?: Map<string, boolean>; // Track completion by habitId+date
 }
 
@@ -21,6 +22,7 @@ export const HabitTableGrid = ({
   startDate,
   onToggle,
   onDelete,
+  onNoteClick,
   localToggleState,
 }: HabitTableGridProps) => {
   const today = startOfDay(new Date());
@@ -124,12 +126,13 @@ export const HabitTableGrid = ({
                   // Only allow editing today's habits (lock past and future dates)
                   const isPast = day < today;
                   const canEdit = isThisToday && !isPast && !isFuture;
+                  const hasNote = apiEntry?.notes && apiEntry.notes.length > 0;
 
                   return (
                     <div
                       key={dateStr}
                       className={cn(
-                        "flex-1 flex items-center justify-center min-w-[28px] sm:min-w-[32px]",
+                        "flex-1 flex items-center justify-center gap-1 min-w-[28px] sm:min-w-[32px] px-1 group/cell",
                         isFuture && "opacity-30"
                       )}
                     >
@@ -143,6 +146,23 @@ export const HabitTableGrid = ({
                             "data-[state=checked]:bg-[hsl(var(--success))] data-[state=checked]:border-[hsl(var(--success))]"
                         )}
                       />
+                      {onNoteClick && canEdit && (
+                        <button
+                          onClick={() => onNoteClick(habit.id, habit.name, dateStr)}
+                          className={cn(
+                            "opacity-0 group-hover/cell:opacity-100 transition-opacity",
+                            hasNote && "opacity-100"
+                          )}
+                          title={hasNote ? "View/edit note" : "Add note"}
+                        >
+                          <MessageSquare 
+                            className={cn(
+                              "w-3 h-3 sm:w-3.5 sm:h-3.5",
+                              hasNote ? "text-muted-foreground/70" : "text-muted-foreground/50"
+                            )} 
+                          />
+                        </button>
+                      )}
                     </div>
                   );
                 })}

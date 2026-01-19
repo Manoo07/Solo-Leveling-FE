@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
+const MAX_CHARACTERS = 3000; // Approximately 500 words
+
 interface HabitNoteDialogProps {
   habitId: string;
   habitName: string;
@@ -49,12 +51,21 @@ export const HabitNoteDialog = ({
     onOpenChange(false);
   };
 
+  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newNote = e.target.value;
+    if (newNote.length <= MAX_CHARACTERS) {
+      setNote(newNote);
+    }
+  };
+
+  const remainingChars = MAX_CHARACTERS - note.length;
+  const wordCount = note.trim() ? note.trim().split(/\s+/).length : 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <MessageSquare className="w-4 h-4 text-accent" />
+          <DialogTitle className="text-base">
             Note for {habitName}
           </DialogTitle>
         </DialogHeader>
@@ -76,12 +87,22 @@ export const HabitNoteDialog = ({
 
           <Textarea
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={handleNoteChange}
             placeholder="Add a note about this entry... (e.g., how you felt, what you did, any observations)"
-            rows={4}
+            rows={6}
             className="resize-none"
             autoFocus
           />
+
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+            <span className={cn(
+              remainingChars < 100 && "text-orange-500",
+              remainingChars === 0 && "text-destructive font-medium"
+            )}>
+              {remainingChars} characters remaining
+            </span>
+          </div>
 
           <div className="flex justify-between gap-2">
             {existingNote && (
@@ -89,9 +110,8 @@ export const HabitNoteDialog = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleDelete}
-                className="text-destructive hover:text-destructive gap-1.5"
+                className="text-destructive hover:text-destructive"
               >
-                <Trash2 className="w-3.5 h-3.5" />
                 Delete Note
               </Button>
             )}
@@ -99,8 +119,7 @@ export const HabitNoteDialog = ({
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={!note.trim()} className="gap-1.5">
-              <Save className="w-3.5 h-3.5" />
+            <Button size="sm" onClick={handleSave} disabled={!note.trim()}>
               Save
             </Button>
           </div>
